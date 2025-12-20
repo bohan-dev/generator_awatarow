@@ -1,7 +1,7 @@
 # Build stage
 FROM node:18-alpine as build
 
-WORKDIR /power-vote-app
+WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
@@ -14,7 +14,7 @@ FROM nginx:alpine
 RUN rm -rf /etc/nginx/conf.d/default.conf /usr/share/nginx/html/*
 
 # Copy the build output and move into nginx html directory
-COPY --from=build /power-vote-app/dist /tmp/dist
+COPY --from=build /app/dist /tmp/dist
 RUN cp -r /tmp/dist/* /usr/share/nginx/html/ && rm -rf /tmp/dist
 
 # Copy nginx configuration

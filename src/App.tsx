@@ -7,13 +7,12 @@ import {
   Box,
   Typography,
   Button,
-  IconButton,
   Snackbar,
   Alert
 } from '@mui/material';
 import SlotMachine from './components/SlotMachine';
 import { CopyProvider, useCopy, SupportedLocale } from './content/CopyProvider';
-import { BalanceProvider, useBalance } from './context/BalanceContext';
+import { BalanceProvider } from './context/BalanceContext';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -22,7 +21,6 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children }) => {
   const { copy, locale, setLocale } = useCopy();
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const { balance } = useBalance();
 
   const localeOptions: Array<{ code: SupportedLocale; label: string; flag: string }> = useMemo(
     () => [

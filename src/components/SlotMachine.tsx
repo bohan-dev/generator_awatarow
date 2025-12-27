@@ -11,6 +11,15 @@ import helmetBinder from '../assets/PV_Pitch_Avatar/avatar_elements/helmet.binde
 import helmetSaw from '../assets/PV_Pitch_Avatar/avatar_elements/helmet.saw.png';
 import tophatBinder from '../assets/PV_Pitch_Avatar/avatar_elements/tophat.binder.png';
 import tophatSaw from '../assets/PV_Pitch_Avatar/avatar_elements/tophat.saw.png';
+import bgCity from '../assets/PV_Pitch_Avatar/avatar_elements/BG.city.png';
+import bgRural from '../assets/PV_Pitch_Avatar/avatar_elements/BG.rural.png';
+
+import iconBeaver from '../assets/PV_Pitch_Avatar/avatar_elements/11.beaver.png';
+import iconDog from '../assets/PV_Pitch_Avatar/avatar_elements/13.dog.png';
+import iconHelmet from '../assets/PV_Pitch_Avatar/avatar_elements/21.helmet.png';
+import iconTophat from '../assets/PV_Pitch_Avatar/avatar_elements/22.tophat.png';
+import iconBinder from '../assets/PV_Pitch_Avatar/avatar_elements/31.binder.png';
+import iconSaw from '../assets/PV_Pitch_Avatar/avatar_elements/33.saw.png';
 
 interface SlotItem {
   id: string;
@@ -67,6 +76,7 @@ const SlotMachine: React.FC = () => {
     null,
     null,
     null,
+    null,
   ]);
   const selectionSectionRef = useRef<HTMLDivElement>(null);
 
@@ -83,12 +93,21 @@ const SlotMachine: React.FC = () => {
   const slotConfigurations = useMemo<SlotConfig[]>(
     () => [
       {
+        id: 'background',
+        label: copy.SLOT_BACKGROUND_LABEL,
+        helper: copy.SLOT_BACKGROUND_HELPER,
+        items: shuffleArray([
+          { id: 'background-city', name: copy.SLOT_BACKGROUND_ITEM_CITY_NAME, image: bgCity },
+          { id: 'background-rural', name: copy.SLOT_BACKGROUND_ITEM_RURAL_NAME, image: bgRural },
+        ]),
+      },
+      {
         id: 'animal',
         label: copy.SLOT_ANIMAL_LABEL,
         helper: copy.SLOT_ANIMAL_HELPER,
         items: shuffleArray([
-          { id: 'animal-beaver', name: copy.SLOT_ANIMAL_ITEM_BEAVER_NAME, image: beaverNoBody },
-          { id: 'animal-dog', name: copy.SLOT_ANIMAL_ITEM_DOG_NAME, image: dogNoBody },
+          { id: 'animal-beaver', name: copy.SLOT_ANIMAL_ITEM_BEAVER_NAME, image: iconBeaver },
+          { id: 'animal-dog', name: copy.SLOT_ANIMAL_ITEM_DOG_NAME, image: iconDog },
         ]),
       },
       {
@@ -96,8 +115,8 @@ const SlotMachine: React.FC = () => {
         label: copy.SLOT_HEADWEAR_LABEL,
         helper: copy.SLOT_HEADWEAR_HELPER,
         items: shuffleArray([
-          { id: 'headgear-helmet', name: copy.SLOT_HEADWEAR_ITEM_HELMET_NAME, image: helmetBody },
-          { id: 'headgear-tophat', name: copy.SLOT_HEADWEAR_ITEM_TOPHAT_NAME, image: tophatBody },
+          { id: 'headgear-helmet', name: copy.SLOT_HEADWEAR_ITEM_HELMET_NAME, image: iconHelmet },
+          { id: 'headgear-tophat', name: copy.SLOT_HEADWEAR_ITEM_TOPHAT_NAME, image: iconTophat },
         ]),
       },
       {
@@ -105,8 +124,8 @@ const SlotMachine: React.FC = () => {
         label: copy.SLOT_TOOL_LABEL,
         helper: copy.SLOT_TOOL_HELPER,
         items: shuffleArray([
-          { id: 'tool-binder', name: copy.SLOT_TOOL_ITEM_BINDER_NAME, image: helmetBinder },
-          { id: 'tool-saw', name: copy.SLOT_TOOL_ITEM_SAW_NAME, image: helmetSaw },
+          { id: 'tool-binder', name: copy.SLOT_TOOL_ITEM_BINDER_NAME, image: iconBinder },
+          { id: 'tool-saw', name: copy.SLOT_TOOL_ITEM_SAW_NAME, image: iconSaw },
         ]),
       },
     ],
@@ -159,11 +178,16 @@ const SlotMachine: React.FC = () => {
   };
 
   const getAvatarLayers = () => {
-    const [animal, headgear, tool] = selections;
+    const [background, animal, headgear, tool] = selections;
     
+    let backgroundLayer = null;
     let faceLayer = null;
     let bodyLayer = null;
     let toolLayer = null;
+
+    if (background) {
+        backgroundLayer = background.image;
+    }
 
     if (animal) {
         faceLayer = animal.id === 'animal-beaver' ? beaverNoBody : dogNoBody;
@@ -182,11 +206,11 @@ const SlotMachine: React.FC = () => {
         }
     }
 
-    return { faceLayer, bodyLayer, toolLayer };
+    return { backgroundLayer, faceLayer, bodyLayer, toolLayer };
   };
 
-  const { faceLayer, bodyLayer, toolLayer } = getAvatarLayers();
-  const hasAnyLayer = faceLayer || bodyLayer || toolLayer;
+  const { backgroundLayer, faceLayer, bodyLayer, toolLayer } = getAvatarLayers();
+  const hasAnyLayer = backgroundLayer || faceLayer || bodyLayer || toolLayer;
 
   return (
     <Container maxWidth="sm" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 4, sm: 6 } }}>
@@ -218,19 +242,19 @@ const SlotMachine: React.FC = () => {
         >
           {hasAnyLayer ? (
             <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-               {/* Layering Order: Body (Back) -> Face (Middle) -> Tool (Front) */}
-               {bodyLayer && (
+               {/* Layering Order: Background (1) -> Animal (2) -> Outfit (3) -> Tool (4) */}
+               {backgroundLayer && (
                  <Box
                    component="img"
-                   src={bodyLayer}
-                   alt="Body"
+                   src={backgroundLayer}
+                   alt="Background"
                    sx={{
                      position: 'absolute',
                      top: 0,
                      left: 0,
                      width: '100%',
                      height: '100%',
-                     objectFit: 'contain',
+                     objectFit: 'cover',
                      zIndex: 1
                    }}
                  />
@@ -251,6 +275,22 @@ const SlotMachine: React.FC = () => {
                    }}
                  />
                )}
+               {bodyLayer && (
+                 <Box
+                   component="img"
+                   src={bodyLayer}
+                   alt="Body"
+                   sx={{
+                     position: 'absolute',
+                     top: 0,
+                     left: 0,
+                     width: '100%',
+                     height: '100%',
+                     objectFit: 'contain',
+                     zIndex: 3
+                   }}
+                 />
+               )}
                {toolLayer && (
                  <Box
                    component="img"
@@ -263,7 +303,7 @@ const SlotMachine: React.FC = () => {
                      width: '100%',
                      height: '100%',
                      objectFit: 'contain',
-                     zIndex: 3
+                     zIndex: 4
                    }}
                  />
                )}
@@ -276,7 +316,7 @@ const SlotMachine: React.FC = () => {
         </Paper>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 2 }}>
         {slotConfigurations.map((slot, index) => {
           const selection = selections[index];
           const isFocused = focusedSlotIndex === index;

@@ -4,7 +4,7 @@ Interaktywna gra głosowania z tworzeniem awatarów, codziennymi nagrodami i osi
 
 ## Funkcje
 
-- **Tworzenie Awatara**: Wybierz zwierzę, nakrycie głowy i narzędzie, aby stworzyć unikalnego awatara
+- **Tworzenie Awatara**: Wybierz zwierzę, ubiór i narzędzie, aby stworzyć unikalnego awatara
 - **Codzienne Głosowanie**: Głosuj raz dziennie (koszt 3 zł) z możliwością wygranej 10 zł
 - **Strona Wyników**: Przeglądaj codzienne wyniki z dopasowanymi cechami
 - **System Osiągnięć**: Odblokowuj osiągnięcia z animowanymi filmami

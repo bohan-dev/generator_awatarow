@@ -10,7 +10,8 @@ import {
   Snackbar,
   Alert
 } from '@mui/material';
-import SlotMachine from './components/SlotMachine';
+// Import main game component
+import SlotMachine from './components/SlotMachine.tsx';
 import { CopyProvider, useCopy, SupportedLocale } from './content/CopyProvider';
 import { BalanceProvider } from './context/BalanceContext';
 

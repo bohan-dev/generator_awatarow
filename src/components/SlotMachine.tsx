@@ -3,23 +3,14 @@ import { Box, Container, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useCopy } from '../content/CopyProvider';
 
-import beaverNoBody from '../assets/PV_Pitch_Avatar/avatar_elements/beaver.noBody.png';
-import dogNoBody from '../assets/PV_Pitch_Avatar/avatar_elements/dog.noBody.png';
-import helmetBody from '../assets/PV_Pitch_Avatar/avatar_elements/helmet.body.png';
-import tophatBody from '../assets/PV_Pitch_Avatar/avatar_elements/tophat.body.png';
-import helmetBinder from '../assets/PV_Pitch_Avatar/avatar_elements/helmet.binder.png';
-import helmetSaw from '../assets/PV_Pitch_Avatar/avatar_elements/helmet.saw.png';
-import tophatBinder from '../assets/PV_Pitch_Avatar/avatar_elements/tophat.binder.png';
-import tophatSaw from '../assets/PV_Pitch_Avatar/avatar_elements/tophat.saw.png';
-import bgCity from '../assets/PV_Pitch_Avatar/avatar_elements/BG.city.png';
-import bgRural from '../assets/PV_Pitch_Avatar/avatar_elements/BG.rural.png';
-
-import iconBeaver from '../assets/PV_Pitch_Avatar/avatar_elements/11.beaver.png';
-import iconDog from '../assets/PV_Pitch_Avatar/avatar_elements/13.dog.png';
-import iconHelmet from '../assets/PV_Pitch_Avatar/avatar_elements/21.helmet.png';
-import iconTophat from '../assets/PV_Pitch_Avatar/avatar_elements/22.tophat.png';
-import iconBinder from '../assets/PV_Pitch_Avatar/avatar_elements/31.binder.png';
-import iconSaw from '../assets/PV_Pitch_Avatar/avatar_elements/33.saw.png';
+// DYNAMIC ASSET IMPORT
+const backgroundAssets = import.meta.glob('../assets/avatars/Background/*.png', { eager: true, as: 'url' });
+const animalAssets = import.meta.glob('../assets/avatars/Animal/*.png', { eager: true, as: 'url' });
+const profileAssets = import.meta.glob('../assets/avatars/Profile/*.png', { eager: true, as: 'url' });
+const outfitAssets = import.meta.glob('../assets/avatars/Outfit/*.png', { eager: true, as: 'url' });
+const headgearAssets = import.meta.glob('../assets/avatars/Headgear/*.png', { eager: true, as: 'url' });
+const toolAssets = import.meta.glob('../assets/avatars/Tool/*.png', { eager: true, as: 'url' });
+const sidekickAssets = import.meta.glob('../assets/avatars/SideKick/*.png', { eager: true, as: 'url' });
 
 interface SlotItem {
   id: string;
@@ -65,71 +56,121 @@ const SelectionCard = styled(Paper)(({ theme }) => ({
   minWidth: 0,
 }));
 
-
-
-
+// Helper function
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const SlotMachine: React.FC = () => {
   const { copy } = useCopy();
   const [focusedSlotIndex, setFocusedSlotIndex] = useState<number>(0);
+  // 6 slots: Background, Animal, Outfit, Headgear, Tool, SideKick
   const [selections, setSelections] = useState<Array<SlotItem | null>>([
-    null,
-    null,
-    null,
-    null,
+    null, null, null, null, null, null
   ]);
   const selectionSectionRef = useRef<HTMLDivElement>(null);
 
-  // Utility function to shuffle an array
-  const shuffleArray = <T,>(array: T[]): T[] => {
-    const shuffled = [...array];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-    return shuffled;
-  };
+  // Parse assets to items
+  // Memoize these to prevent recalc on every render
+  const slotData = useMemo(() => {
+    // 1. Backgrounds
+    const backgrounds: SlotItem[] = Object.keys(backgroundAssets).map(path => {
+        const filename = path.split('/').pop()!;
+        const id = filename.replace(/^BG\.|^bg\./, '').replace(/\.png$/, '');
+        return { id, name: capitalize(id), image: backgroundAssets[path] };
+    });
+
+    // 2. Animals
+    const animalIds = new Set<string>();
+    Object.keys(animalAssets).forEach(path => {
+        const filename = path.split('/').pop()!;
+        const match = filename.match(/^([^.]+)\.HT/);
+        if (match) animalIds.add(match[1]);
+    });
+    const animals: SlotItem[] = Array.from(animalIds).map(id => {
+        const iconPath = Object.keys(profileAssets).find(p => p.includes(`/${id}.head.png`));
+        return { 
+            id, 
+            name: capitalize(id), 
+            image: iconPath ? profileAssets[iconPath] : '' 
+        };
+    }).filter(item => item.image); // Filter out if no icon?
+
+    // 3. Outfits
+    const outfits: SlotItem[] = Object.keys(outfitAssets).map(path => {
+        const filename = path.split('/').pop()!;
+        const id = filename.replace(/\.png$/, '');
+        return { id, name: capitalize(id), image: outfitAssets[path] };
+    });
+
+    // 4. Headgears
+    const headgears: SlotItem[] = Object.keys(headgearAssets).map(path => {
+        const filename = path.split('/').pop()!;
+        const id = filename.replace(/\.png$/, '');
+        return { id, name: capitalize(id), image: headgearAssets[path] };
+    });
+
+    // 5. Tools
+    const toolIds = new Set<string>();
+    Object.keys(toolAssets).forEach(path => {
+        const filename = path.split('/').pop()!;
+        const id = filename.split('.')[0];
+        toolIds.add(id);
+    });
+    const tools: SlotItem[] = Array.from(toolIds).map(id => {
+        // Use any variant as icon
+        const iconPath = Object.keys(toolAssets).find(p => p.includes(`/${id}.`));
+        return { id, name: capitalize(id), image: iconPath ? toolAssets[iconPath] : '' };
+    });
+
+    // 6. SideKicks
+    const sidekicks: SlotItem[] = Object.keys(sidekickAssets).map(path => {
+        const filename = path.split('/').pop()!;
+        const id = filename.split('.')[0];
+        return { id, name: capitalize(id), image: sidekickAssets[path] };
+    });
+
+    return { backgrounds, animals, outfits, headgears, tools, sidekicks };
+  }, []);
 
   const slotConfigurations = useMemo<SlotConfig[]>(
     () => [
       {
         id: 'background',
-        label: copy.SLOT_BACKGROUND_LABEL,
-        helper: copy.SLOT_BACKGROUND_HELPER,
-        items: shuffleArray([
-          { id: 'background-city', name: copy.SLOT_BACKGROUND_ITEM_CITY_NAME, image: bgCity },
-          { id: 'background-rural', name: copy.SLOT_BACKGROUND_ITEM_RURAL_NAME, image: bgRural },
-        ]),
+        label: copy.SLOT_BACKGROUND_LABEL || 'Tło',
+        helper: copy.SLOT_BACKGROUND_HELPER || 'Wybierz tło',
+        items: slotData.backgrounds,
       },
       {
         id: 'animal',
-        label: copy.SLOT_ANIMAL_LABEL,
-        helper: copy.SLOT_ANIMAL_HELPER,
-        items: shuffleArray([
-          { id: 'animal-beaver', name: copy.SLOT_ANIMAL_ITEM_BEAVER_NAME, image: iconBeaver },
-          { id: 'animal-dog', name: copy.SLOT_ANIMAL_ITEM_DOG_NAME, image: iconDog },
-        ]),
+        label: copy.SLOT_ANIMAL_LABEL || 'Zwierzę',
+        helper: copy.SLOT_ANIMAL_HELPER || 'Wybierz zwierzę',
+        items: slotData.animals,
       },
       {
-        id: 'headwear',
-        label: copy.SLOT_HEADWEAR_LABEL,
-        helper: copy.SLOT_HEADWEAR_HELPER,
-        items: shuffleArray([
-          { id: 'headgear-helmet', name: copy.SLOT_HEADWEAR_ITEM_HELMET_NAME, image: iconHelmet },
-          { id: 'headgear-tophat', name: copy.SLOT_HEADWEAR_ITEM_TOPHAT_NAME, image: iconTophat },
-        ]),
+        id: 'outfit',
+        label: 'Ubiór', // Hardcoded fallback or new key
+        helper: copy.SLOT_HEADWEAR_HELPER || 'Wybierz ubiór', // Reusing helper if appropriate
+        items: slotData.outfits,
+      },
+      {
+        id: 'headgear',
+        label: 'Nakrycie głowy', 
+        helper: 'Wybierz nakrycie głowy',
+        items: slotData.headgears,
       },
       {
         id: 'tool',
-        label: copy.SLOT_TOOL_LABEL,
-        helper: copy.SLOT_TOOL_HELPER,
-        items: shuffleArray([
-          { id: 'tool-binder', name: copy.SLOT_TOOL_ITEM_BINDER_NAME, image: iconBinder },
-          { id: 'tool-saw', name: copy.SLOT_TOOL_ITEM_SAW_NAME, image: iconSaw },
-        ]),
+        label: copy.SLOT_TOOL_LABEL || 'Atrybut',
+        helper: copy.SLOT_TOOL_HELPER || 'Wybierz atrybut',
+        items: slotData.tools,
+      },
+      {
+        id: 'sidekick',
+        label: 'Kompan',
+        helper: 'Wybierz kompana',
+        items: slotData.sidekicks,
       },
     ],
-    [copy]
+    [copy, slotData]
   );
 
   const selectedConfig = useMemo(
@@ -138,34 +179,22 @@ const SlotMachine: React.FC = () => {
   );
 
   useEffect(() => {
+    // Only update selections if metadata changes, but try to keep selected IDs
     setSelections((prev) =>
-      prev.map((selection) => {
-        if (!selection) {
-          return selection;
-        }
-
-        const updated = slotConfigurations
-          .flatMap((slot) => slot.items)
-          .find((item) => item.id === selection.id);
-
+      prev.map((selection, index) => {
+        if (!selection) return selection;
+        const conf = slotConfigurations[index];
+        if (!conf) return selection;
+        const updated = conf.items.find((item) => item.id === selection.id);
         return updated ?? selection;
       })
     );
   }, [slotConfigurations]);
 
-  if (!selectedConfig) {
-    return null;
-  }
-
   const handleSlotFocus = (index: number) => {
     setFocusedSlotIndex(index);
-    
-    // Scroll to the selection section
     setTimeout(() => {
-      selectionSectionRef.current?.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      });
+        selectionSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   };
 
@@ -178,42 +207,89 @@ const SlotMachine: React.FC = () => {
   };
 
   const getAvatarLayers = () => {
-    const [background, animal, headgear, tool] = selections;
-    
-    let backgroundLayer = null;
-    let faceLayer = null;
-    let bodyLayer = null;
-    let toolLayer = null;
+    // Indices: 0: BG, 1: Animal, 2: Outfit, 3: Headgear, 4: Tool, 5: Sidekick
+    const [bgItem, animalItem, outfitItem, headgearItem, toolItem, sidekickItem] = selections;
 
-    if (background) {
-        backgroundLayer = background.image;
+    // Check completeness
+    const isComplete = selections.every(s => s !== null);
+    if (!isComplete) {
+        return { layers: [] };
     }
 
-    if (animal) {
-        faceLayer = animal.id === 'animal-beaver' ? beaverNoBody : dogNoBody;
+    const layers: { src: string, zIndex: number, id: string }[] = [];
+
+    // 1. Background (Z=1)
+    if (bgItem) {
+        layers.push({ src: bgItem.image, zIndex: 1, id: 'bg' });
     }
 
-    if (headgear) {
-        bodyLayer = headgear.id === 'headgear-tophat' ? tophatBody : helmetBody;
-    }
-
-    if (tool) {
-        const isTophat = headgear?.id === 'headgear-tophat';
-        if (tool.id === 'tool-binder') {
-            toolLayer = isTophat ? tophatBinder : helmetBinder;
-        } else if (tool.id === 'tool-saw') {
-            toolLayer = isTophat ? tophatSaw : helmetSaw;
+    // 2a. Animal Part I (Z=2) matches `*.HT.layers.1.png` OR `*.HT.png`
+    if (animalItem) {
+        const id = animalItem.id;
+        // Check for Layer 1
+        const layer1Path = Object.keys(animalAssets).find(p => p.includes(`/${id}.HT.layers.1.png`));
+        const singlePath = Object.keys(animalAssets).find(p => p.includes(`/${id}.HT.png`)); // Non-layered
+        
+        if (layer1Path) {
+            layers.push({ src: animalAssets[layer1Path], zIndex: 2, id: 'animal-back' });
+        } else if (singlePath) {
+            layers.push({ src: animalAssets[singlePath], zIndex: 2, id: 'animal-full' });
         }
     }
 
-    return { backgroundLayer, faceLayer, bodyLayer, toolLayer };
+    // 3. Outfit (Z=3)
+    if (outfitItem) {
+        layers.push({ src: outfitItem.image, zIndex: 3, id: 'outfit' });
+    }
+
+    // 2b. Animal Part II (Z=4) matches `*.HT.layers.2.png`
+    if (animalItem) {
+        const id = animalItem.id;
+        const layer2Path = Object.keys(animalAssets).find(p => p.includes(`/${id}.HT.layers.2.png`));
+        if (layer2Path) {
+            layers.push({ src: animalAssets[layer2Path], zIndex: 4, id: 'animal-front' });
+        }
+    }
+
+    // 4. Headgear (Z=5)
+    if (headgearItem) {
+        layers.push({ src: headgearItem.image, zIndex: 5, id: 'headgear' });
+    }
+
+    // 5. Tool (Z=6) - Depends on Outfit
+    if (toolItem && outfitItem) {
+        // pattern: toolId.outfitId.png
+        // e.g. binder.suit.png
+        // Check exact match first
+        let toolPath = Object.keys(toolAssets).find(p => {
+             const filename = p.split('/').pop()!;
+             return filename.startsWith(`${toolItem.id}.${outfitItem.id}.`);
+        });
+        
+        if (!toolPath) {
+             // Fallback: try to find any for this tool ID to avoid missing image
+             toolPath = Object.keys(toolAssets).find(p => p.includes(`/${toolItem.id}.`));
+        }
+
+        if (toolPath) {
+             layers.push({ src: toolAssets[toolPath], zIndex: 6, id: 'tool' });
+        }
+    }
+
+    // 6. SideKick (Z=7)
+    if (sidekickItem) {
+        layers.push({ src: sidekickItem.image, zIndex: 7, id: 'sidekick' });
+    }
+
+    return { layers };
   };
 
-  const { backgroundLayer, faceLayer, bodyLayer, toolLayer } = getAvatarLayers();
-  const hasAnyLayer = backgroundLayer || faceLayer || bodyLayer || toolLayer;
+  const { layers } = getAvatarLayers();
+  // Don't show anything unless complete (handled by empty layers array from getAvatarLayers)
+  const showAvatar = layers.length > 0;
 
   return (
-    <Container maxWidth="sm" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 4, sm: 6 } }}>
+    <Container maxWidth="md" sx={{ mt: { xs: 1.5, sm: 4 }, mb: { xs: 4, sm: 6 } }}>
       <Box sx={{ textAlign: 'center', mb: { xs: 2.5, sm: 5 } }}>
         <Typography variant="body2" sx={{ color: 'rgba(255, 215, 0, 0.75)', mt: { xs: 0.75, sm: 1.5 } }}>
           {copy.SLOT_DESCRIPTION}
@@ -225,8 +301,8 @@ const SlotMachine: React.FC = () => {
         <Paper
           elevation={5}
           sx={{
-            width: 250,
-            height: 250,
+            width: 300,
+            height: 300,
             borderRadius: 3,
             backgroundColor: '#FFFFFF',
             border: '2px solid rgba(255, 215, 0, 0.4)',
@@ -240,30 +316,14 @@ const SlotMachine: React.FC = () => {
             overflow: 'hidden'
           }}
         >
-          {hasAnyLayer ? (
+          {showAvatar ? (
             <Box sx={{ position: 'relative', width: '100%', height: '100%' }}>
-               {/* Layering Order: Background (1) -> Animal (2) -> Outfit (3) -> Tool (4) */}
-               {backgroundLayer && (
+               {layers.sort((a,b) => a.zIndex - b.zIndex).map((layer) => (
                  <Box
+                   key={layer.id}
                    component="img"
-                   src={backgroundLayer}
-                   alt="Background"
-                   sx={{
-                     position: 'absolute',
-                     top: 0,
-                     left: 0,
-                     width: '100%',
-                     height: '100%',
-                     objectFit: 'cover',
-                     zIndex: 1
-                   }}
-                 />
-               )}
-               {faceLayer && (
-                 <Box
-                   component="img"
-                   src={faceLayer}
-                   alt="Face"
+                   src={layer.src}
+                   alt={layer.id}
                    sx={{
                      position: 'absolute',
                      top: 0,
@@ -271,52 +331,25 @@ const SlotMachine: React.FC = () => {
                      width: '100%',
                      height: '100%',
                      objectFit: 'contain',
-                     zIndex: 2
+                     zIndex: layer.zIndex
                    }}
                  />
-               )}
-               {bodyLayer && (
-                 <Box
-                   component="img"
-                   src={bodyLayer}
-                   alt="Body"
-                   sx={{
-                     position: 'absolute',
-                     top: 0,
-                     left: 0,
-                     width: '100%',
-                     height: '100%',
-                     objectFit: 'contain',
-                     zIndex: 3
-                   }}
-                 />
-               )}
-               {toolLayer && (
-                 <Box
-                   component="img"
-                   src={toolLayer}
-                   alt="Tool"
-                   sx={{
-                     position: 'absolute',
-                     top: 0,
-                     left: 0,
-                     width: '100%',
-                     height: '100%',
-                     objectFit: 'contain',
-                     zIndex: 4
-                   }}
-                 />
-               )}
+               ))}
             </Box>
           ) : (
-            <Typography variant="h1" sx={{ color: 'rgba(0, 0, 0, 0.2)', fontWeight: 800, fontSize: '4rem' }}>
-              ?
-            </Typography>
+            <Box sx={{ textAlign: 'center', p: 2 }}>
+                <Typography variant="h3" sx={{ color: 'rgba(0, 0, 0, 0.2)', fontWeight: 800 }}>
+                ?
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)' }}>
+                    Wybierz wszystkie cechy
+                </Typography>
+            </Box>
           )}
         </Paper>
       </Box>
 
-      <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 2 }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 1.5 }}>
         {slotConfigurations.map((slot, index) => {
           const selection = selections[index];
           const isFocused = focusedSlotIndex === index;
@@ -335,7 +368,8 @@ const SlotMachine: React.FC = () => {
                     : '0 10px 30px rgba(0, 0, 0, 0.35)',
                   transform: isFocused ? 'translateY(-6px)' : 'none',
                   opacity: 1,
-                  minHeight: 100,
+                  minHeight: 80,
+                  p: 1
                 }}
               >
                 {selection ? (
@@ -345,19 +379,19 @@ const SlotMachine: React.FC = () => {
                     alt={selection.name}
                     sx={{
                       maxWidth: '100%',
-                      maxHeight: '80px',
+                      maxHeight: '60px',
                       objectFit: 'contain',
                     }}
                   />
                 ) : (
-                  <Typography variant="h2" sx={{ color: '#0B0B0B', fontWeight: 800 }}>
+                  <Typography variant="h4" sx={{ color: '#0B0B0B', fontWeight: 800 }}>
                     ?
                   </Typography>
                 )}
               </SlotDisplay>
               <Typography
-                variant="subtitle2"
-                sx={{ mt: { xs: 0.75, sm: 1.5 }, color: 'rgba(255, 215, 0, 0.8)', letterSpacing: 0.5 }}
+                variant="caption"
+                sx={{ display:'block', mt: 1, color: 'rgba(255, 215, 0, 0.8)', letterSpacing: 0.5, fontSize: '0.7rem' }}
               >
                 {slot.label}
               </Typography>
@@ -383,11 +417,12 @@ const SlotMachine: React.FC = () => {
         <Box
           sx={{
             display: 'flex',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
             gap: { xs: 1, sm: 2 },
             mt: { xs: 2, sm: 3 },
             pt: 1,
             pb: 1,
-            px: { xs: 0.5, sm: 1 },
             width: '100%',
           }}
         >
@@ -406,7 +441,9 @@ const SlotMachine: React.FC = () => {
                     ? '0 16px 36px rgba(255, 215, 0, 0.35)'
                     : '0 12px 28px rgba(0, 0, 0, 0.45)',
                   transform: isSelected ? 'translateY(-6px)' : 'none',
-                  pointerEvents: 'auto',
+                  flex: '0 0 auto',
+                  width: 100,
+                  minWidth: 100
                 }}
               >
                 <Box
@@ -415,7 +452,7 @@ const SlotMachine: React.FC = () => {
                   alt={item.name}
                   sx={{ width: '100%', maxWidth: 64, height: 'auto' }}
                 />
-                <Typography variant="subtitle2" sx={{ color: '#FFD700', fontWeight: 600 }}>
+                <Typography variant="subtitle2" sx={{ color: '#FFD700', fontWeight: 600, fontSize: '0.75rem', textAlign: 'center' }}>
                   {item.name}
                 </Typography>
               </SelectionCard>

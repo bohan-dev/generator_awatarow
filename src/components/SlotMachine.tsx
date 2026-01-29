@@ -69,13 +69,18 @@ const SlotMachine: React.FC = () => {
   const selectionSectionRef = useRef<HTMLDivElement>(null);
 
   // Parse assets to items
-  // Memoize these to prevent recalc on every render
   const slotData = useMemo(() => {
+    const getName = (category: string, id: string) => {
+        const key = `SLOT_ITEM_${category}_${id.toUpperCase().replace(/\./g, '_')}_NAME`;
+        // @ts-ignore
+        return copy[key] || capitalize(id);
+    };
+
     // 1. Backgrounds
     const backgrounds: SlotItem[] = Object.keys(backgroundAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.replace(/^BG\.|^bg\./, '').replace(/\.png$/, '');
-        return { id, name: capitalize(id), image: backgroundAssets[path] };
+        return { id, name: getName('BACKGROUND', id), image: backgroundAssets[path] };
     });
 
     // 2. Animals
@@ -89,23 +94,23 @@ const SlotMachine: React.FC = () => {
         const iconPath = Object.keys(profileAssets).find(p => p.includes(`/${id}.head.png`));
         return { 
             id, 
-            name: capitalize(id), 
+            name: getName('ANIMAL', id.replace(/\./g, '_')), 
             image: iconPath ? profileAssets[iconPath] : '' 
         };
-    }).filter(item => item.image); // Filter out if no icon?
+    }).filter(item => item.image);
 
     // 3. Outfits
     const outfits: SlotItem[] = Object.keys(outfitAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.replace(/\.png$/, '');
-        return { id, name: capitalize(id), image: outfitAssets[path] };
+        return { id, name: getName('OUTFIT', id), image: outfitAssets[path] };
     });
 
     // 4. Headgears
     const headgears: SlotItem[] = Object.keys(headgearAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.replace(/\.png$/, '');
-        return { id, name: capitalize(id), image: headgearAssets[path] };
+        return { id, name: getName('HEADGEAR', id), image: headgearAssets[path] };
     });
 
     // 5. Tools
@@ -116,20 +121,19 @@ const SlotMachine: React.FC = () => {
         toolIds.add(id);
     });
     const tools: SlotItem[] = Array.from(toolIds).map(id => {
-        // Use any variant as icon
         const iconPath = Object.keys(toolAssets).find(p => p.includes(`/${id}.`));
-        return { id, name: capitalize(id), image: iconPath ? toolAssets[iconPath] : '' };
+        return { id, name: getName('TOOL', id), image: iconPath ? toolAssets[iconPath] : '' };
     });
 
     // 6. SideKicks
     const sidekicks: SlotItem[] = Object.keys(sidekickAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.split('.')[0];
-        return { id, name: capitalize(id), image: sidekickAssets[path] };
+        return { id, name: getName('SIDEKICK', id), image: sidekickAssets[path] };
     });
 
     return { backgrounds, animals, outfits, headgears, tools, sidekicks };
-  }, []);
+  }, [copy]);
 
   const slotConfigurations = useMemo<SlotConfig[]>(
     () => [
@@ -147,26 +151,26 @@ const SlotMachine: React.FC = () => {
       },
       {
         id: 'outfit',
-        label: 'Ubiór', // Hardcoded fallback or new key
-        helper: copy.SLOT_HEADWEAR_HELPER || 'Wybierz ubiór', // Reusing helper if appropriate
+        label: copy.SLOT_OUTFIT_LABEL || 'Outfit', 
+        helper: copy.SLOT_OUTFIT_HELPER || 'Choose outfit',
         items: slotData.outfits,
       },
       {
         id: 'headgear',
-        label: 'Nakrycie głowy', 
-        helper: 'Wybierz nakrycie głowy',
+        label: copy.SLOT_HEADGEAR_LABEL || 'Headgear', 
+        helper: copy.SLOT_HEADGEAR_HELPER || 'Choose headgear',
         items: slotData.headgears,
       },
       {
         id: 'tool',
-        label: copy.SLOT_TOOL_LABEL || 'Atrybut',
-        helper: copy.SLOT_TOOL_HELPER || 'Wybierz atrybut',
+        label: copy.SLOT_TOOL_LABEL || 'Tool',
+        helper: copy.SLOT_TOOL_HELPER || 'Choose tool',
         items: slotData.tools,
       },
       {
         id: 'sidekick',
-        label: 'Kompan',
-        helper: 'Wybierz kompana',
+        label: copy.SLOT_SIDEKICK_LABEL || 'Companion',
+        helper: copy.SLOT_SIDEKICK_HELPER || 'Choose companion',
         items: slotData.sidekicks,
       },
     ],
@@ -342,7 +346,7 @@ const SlotMachine: React.FC = () => {
                 ?
                 </Typography>
                 <Typography variant="caption" sx={{ color: 'rgba(0,0,0,0.5)' }}>
-                    Wybierz wszystkie cechy
+                    {copy.SLOT_CHOOSE_ALL_TRAITS}
                 </Typography>
             </Box>
           )}

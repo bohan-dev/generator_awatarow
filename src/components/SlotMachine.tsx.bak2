@@ -3,27 +3,19 @@ import { Box, Container, Paper, Typography } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { useCopy } from '../content/CopyProvider';
 
-// DYNAMIC ASSET IMPORT - Full Images
+// DYNAMIC ASSET IMPORT
 const backgroundAssets = import.meta.glob('../assets/avatars/Background/*.png', { eager: true, as: 'url' });
 const animalAssets = import.meta.glob('../assets/avatars/Animal/*.png', { eager: true, as: 'url' });
+const profileAssets = import.meta.glob('../assets/avatars/Profile/*.png', { eager: true, as: 'url' });
 const outfitAssets = import.meta.glob('../assets/avatars/Outfit/*.png', { eager: true, as: 'url' });
 const headgearAssets = import.meta.glob('../assets/avatars/Headgear/*.png', { eager: true, as: 'url' });
 const toolAssets = import.meta.glob('../assets/avatars/Tool/*.png', { eager: true, as: 'url' });
 const sidekickAssets = import.meta.glob('../assets/avatars/SideKick/*.png', { eager: true, as: 'url' });
 
-// DYNAMIC ASSET IMPORT - Icons (Low Res)
-const backgroundIcons = import.meta.glob('../assets/avatars/Background/Icon/*.png', { eager: true, as: 'url' });
-const animalIcons = import.meta.glob('../assets/avatars/Animal/Icon/*.png', { eager: true, as: 'url' });
-const outfitIcons = import.meta.glob('../assets/avatars/Outfit/Icon/*.png', { eager: true, as: 'url' });
-const headgearIcons = import.meta.glob('../assets/avatars/Headgear/Icon/*.png', { eager: true, as: 'url' });
-const toolIcons = import.meta.glob('../assets/avatars/Tool/Icon/*.png', { eager: true, as: 'url' });
-const sidekickIcons = import.meta.glob('../assets/avatars/SideKick/Icon/*.png', { eager: true, as: 'url' });
-
 interface SlotItem {
   id: string;
   name: string;
-  image: string; // Full size for avatar
-  icon: string;  // Icon size for UI
+  image: string;
 }
 
 interface SlotConfig {
@@ -77,7 +69,6 @@ const SlotMachine: React.FC = () => {
   const selectionSectionRef = useRef<HTMLDivElement>(null);
 
   // Parse assets to items
-  // Memoize these to prevent recalc on every render
   const slotData = useMemo(() => {
     const getName = (category: string, id: string) => {
         const key = `SLOT_ITEM_${category}_${id.toUpperCase().replace(/\./g, '_')}_NAME`;
@@ -89,16 +80,7 @@ const SlotMachine: React.FC = () => {
     const backgrounds: SlotItem[] = Object.keys(backgroundAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.replace(/^BG\.|^bg\./, '').replace(/\.png$/, '');
-        // Find icon
-        // Icon pattern: [filename].icon.png (e.g., BG.beach.icon.png)
-        // Or if the id is "beach", filename is BG.beach.png, icon is BG.beach.icon.png
-        const iconPath = Object.keys(backgroundIcons).find(p => p.includes(`/${filename.replace('.png', '.icon.png')}`));
-        return { 
-            id, 
-            name: getName('BACKGROUND', id), 
-            image: backgroundAssets[path],
-            icon: iconPath ? backgroundIcons[iconPath] : backgroundAssets[path]
-        };
+        return { id, name: getName('BACKGROUND', id), image: backgroundAssets[path] };
     });
 
     // 2. Animals
@@ -109,45 +91,26 @@ const SlotMachine: React.FC = () => {
         if (match) animalIds.add(match[1]);
     });
     const animals: SlotItem[] = Array.from(animalIds).map(id => {
-        // Icon pattern: [id].head.png
-        const iconPath = Object.keys(animalIcons).find(p => p.includes(`/${id}.head.png`));
-        // We really don't have a single "image" for the Animal SlotItem that is used for rendering the avatar directly, 
-        // because getAvatarLayers constructs it from layers. 
-        // But let's set it to the icon path (full res head used earlier) or keep it empty/consistent.
-        // Actually, previous implementation found profileAssets as the "image".
-        
+        const iconPath = Object.keys(profileAssets).find(p => p.includes(`/${id}.head.png`));
         return { 
             id, 
             name: getName('ANIMAL', id.replace(/\./g, '_')), 
-            image: iconPath ? animalIcons[iconPath] : '', // Unused for layers, mostly
-            icon: iconPath ? animalIcons[iconPath] : ''
+            image: iconPath ? profileAssets[iconPath] : '' 
         };
-    }).filter(item => item.icon);
+    }).filter(item => item.image);
 
     // 3. Outfits
     const outfits: SlotItem[] = Object.keys(outfitAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.replace(/\.png$/, '');
-        const iconPath = Object.keys(outfitIcons).find(p => p.includes(`/${id}.icon.png`));
-        return { 
-             id, 
-             name: getName('OUTFIT', id), 
-             image: outfitAssets[path],
-             icon: iconPath ? outfitIcons[iconPath] : outfitAssets[path]
-        };
+        return { id, name: getName('OUTFIT', id), image: outfitAssets[path] };
     });
 
     // 4. Headgears
     const headgears: SlotItem[] = Object.keys(headgearAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.replace(/\.png$/, '');
-        const iconPath = Object.keys(headgearIcons).find(p => p.includes(`/${id}.icon.png`));
-        return { 
-            id, 
-            name: getName('HEADGEAR', id), 
-            image: headgearAssets[path],
-            icon: iconPath ? headgearIcons[iconPath] : headgearAssets[path]
-        };
+        return { id, name: getName('HEADGEAR', id), image: headgearAssets[path] };
     });
 
     // 5. Tools
@@ -158,28 +121,15 @@ const SlotMachine: React.FC = () => {
         toolIds.add(id);
     });
     const tools: SlotItem[] = Array.from(toolIds).map(id => {
-        // Icon pattern: [id].png inside Tool/Icon
-        const iconPath = Object.keys(toolIcons).find(p => p.includes(`/${id}.png`));
-        return { 
-            id, 
-            name: getName('TOOL', id), 
-            image: iconPath ? toolIcons[iconPath] : '', // Tool needs outfit context for full image
-            icon: iconPath ? toolIcons[iconPath] : ''
-        };
-    }).filter(item => item.icon);
+        const iconPath = Object.keys(toolAssets).find(p => p.includes(`/${id}.`));
+        return { id, name: getName('TOOL', id), image: iconPath ? toolAssets[iconPath] : '' };
+    });
 
     // 6. SideKicks
     const sidekicks: SlotItem[] = Object.keys(sidekickAssets).map(path => {
         const filename = path.split('/').pop()!;
         const id = filename.split('.')[0];
-        // Icon pattern: [id].icon.png (e.g. can.icon.png)
-        const iconPath = Object.keys(sidekickIcons).find(p => p.includes(`/${id}.icon.png`));
-        return { 
-            id, 
-            name: getName('SIDEKICK', id), 
-            image: sidekickAssets[path],
-            icon: iconPath ? sidekickIcons[iconPath] : sidekickAssets[path]
-        };
+        return { id, name: getName('SIDEKICK', id), image: sidekickAssets[path] };
     });
 
     return { backgrounds, animals, outfits, headgears, tools, sidekicks };
@@ -258,51 +208,6 @@ const SlotMachine: React.FC = () => {
       next[focusedSlotIndex] = item;
       return next;
     });
-  };
-
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  
-  // Decide if infinite scroll should be active
-  // Only for Background (id='background') and Animal (id='animal')
-  const isInfiniteScroll = useMemo(() => {
-    return selectedConfig.id === 'background' || selectedConfig.id === 'animal';
-  }, [selectedConfig.id]);
-
-  // Infinite Scroll: Initialize to middle (set 2 of 3)
-  useEffect(() => {
-    if (isInfiniteScroll && scrollContainerRef.current) {
-        const container = scrollContainerRef.current;
-        // Small timeout to allow layout to settle
-        setTimeout(() => {
-            if (container.scrollWidth > container.clientWidth) {
-                 const singleSetWidth = container.scrollWidth / 3;
-                 // Center roughly or exactly at start of 2nd set
-                 container.scrollLeft = singleSetWidth; 
-            }
-        }, 50);
-    }
-  }, [focusedSlotIndex, selectedConfig.items, isInfiniteScroll]);
-
-  const handleInfiniteScroll = () => {
-    if (!isInfiniteScroll) return;
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const scrollWidth = container.scrollWidth;
-    // If content fits, no scrolling needed
-    if (scrollWidth <= container.clientWidth) return;
-
-    const singleSetWidth = scrollWidth / 3;
-    const { scrollLeft } = container;
-
-    // If we scroll into the first set (buffer A), jump forward to second set (buffer B)
-    if (scrollLeft < singleSetWidth / 2) {
-        container.scrollLeft += singleSetWidth;
-    }
-    // If we scroll into the third set (buffer C), jump backward to second set (buffer B)
-    else if (scrollLeft >= singleSetWidth * 2.5) {
-        container.scrollLeft -= singleSetWidth;
-    }
   };
 
   const getAvatarLayers = () => {
@@ -448,27 +353,13 @@ const SlotMachine: React.FC = () => {
         </Paper>
       </Box>
 
-      <Box 
-        sx={{ 
-          display: { xs: 'flex', md: 'grid' },
-          gridTemplateColumns: { md: 'repeat(6, 1fr)' },
-          overflowX: { xs: 'auto', md: 'visible' },
-          gap: 1.5,
-          pb: { xs: 1, md: 0 },
-          pt: { xs: 2, md: 0 },
-          // Custom Scrollbar styles
-          scrollbarWidth: 'thin',
-          '&::-webkit-scrollbar': { height: '4px' },
-          '&::-webkit-scrollbar-track': { background: 'transparent' },
-          '&::-webkit-scrollbar-thumb': { background: 'rgba(255, 215, 0, 0.3)', borderRadius: '4px' }
-        }}
-      >
+      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3, 1fr)', md: 'repeat(6, 1fr)' }, gap: 1.5 }}>
         {slotConfigurations.map((slot, index) => {
           const selection = selections[index];
           const isFocused = focusedSlotIndex === index;
 
           return (
-            <Box key={slot.id} sx={{ textAlign: 'center', minWidth: { xs: 100, md: 'auto' }, flexShrink: 0 }}>
+            <Box key={slot.id} sx={{ textAlign: 'center' }}>
               <SlotDisplay
                 elevation={isFocused ? 10 : 3}
                 onClick={() => handleSlotFocus(index)}
@@ -488,7 +379,7 @@ const SlotMachine: React.FC = () => {
                 {selection ? (
                   <Box
                     component="img"
-                    src={selection.icon} // CHANGED to icon
+                    src={selection.image}
                     alt={selection.name}
                     sx={{
                       maxWidth: '100%',
@@ -528,34 +419,23 @@ const SlotMachine: React.FC = () => {
         </Typography>
 
         <Box
-          ref={isInfiniteScroll ? scrollContainerRef : null}
-          onScroll={isInfiniteScroll ? handleInfiniteScroll : undefined}
           sx={{
             display: 'flex',
-            flexWrap: isInfiniteScroll ? 'nowrap' : 'wrap',
-            justifyContent: isInfiniteScroll ? 'flex-start' : 'center',
-            overflowX: isInfiniteScroll ? 'auto' : 'visible',
+            flexWrap: 'wrap',
+            justifyContent: 'center',
             gap: { xs: 1, sm: 2 },
             mt: { xs: 2, sm: 3 },
-            pt: 2,
-            pb: 2,
+            pt: 1,
+            pb: 1,
             width: '100%',
-            scrollbarWidth: isInfiniteScroll ? 'none' : 'auto', 
-            '&::-webkit-scrollbar': { display: isInfiniteScroll ? 'none' : 'block' }
           }}
         >
-          {(isInfiniteScroll 
-            ? [...selectedConfig.items, ...selectedConfig.items, ...selectedConfig.items]
-            : selectedConfig.items
-           ).map((item, index) => {
-            // For not-infinite scroll, index is unique enough since items only appear once
-            // For infinite scroll, use composite key
-            const uniqueKey = isInfiniteScroll ? `${item.id}-${index}` : item.id;
+          {selectedConfig.items.map((item) => {
             const isSelected = selections[focusedSlotIndex]?.id === item.id;
 
             return (
               <SelectionCard
-                key={uniqueKey}
+                key={item.id}
                 elevation={isSelected ? 8 : 2}
                 onClick={() => handleItemPick(item)}
                 sx={{
@@ -572,7 +452,7 @@ const SlotMachine: React.FC = () => {
               >
                 <Box
                   component="img"
-                  src={item.icon} // CHANGED to icon
+                  src={item.image}
                   alt={item.name}
                   sx={{ width: '100%', maxWidth: 64, height: 'auto' }}
                 />

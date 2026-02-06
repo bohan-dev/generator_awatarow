@@ -11,7 +11,7 @@ import {
   Alert
 } from '@mui/material';
 // Import main game component
-import SlotMachine from './components/SlotMachine.tsx';
+import SlotMachine from './components/SlotMachine';
 import { CopyProvider, useCopy, SupportedLocale } from './content/CopyProvider';
 import { BalanceProvider } from './context/BalanceContext';
 

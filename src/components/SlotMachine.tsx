@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useRef } from 'react';
-import { Box, Container, Paper, Typography } from '@mui/material';
+import { Box, Container, Paper, Typography, IconButton } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { ChevronLeft, ChevronRight } from '@mui/icons-material';
 import { useCopy } from '../content/CopyProvider';
 
 // DYNAMIC ASSET IMPORT - Full Images
@@ -305,6 +306,16 @@ const SlotMachine: React.FC = () => {
     }
   };
 
+  const handleManualScroll = (direction: 'left' | 'right') => {
+    if (scrollContainerRef.current) {
+      const scrollAmount = 120; // Card width (100) + gap (~20)
+      scrollContainerRef.current.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
+
   const getAvatarLayers = () => {
     // Indices: 0: BG, 1: Animal, 2: Outfit, 3: Headgear, 4: Tool, 5: Sidekick
     const [bgItem, animalItem, outfitItem, headgearItem, toolItem, sidekickItem] = selections;
@@ -527,6 +538,27 @@ const SlotMachine: React.FC = () => {
           {selectedConfig.helper}
         </Typography>
 
+        <Box sx={{ position: 'relative', width: '100%' }}>
+          {isInfiniteScroll && (
+            <IconButton
+              onClick={() => handleManualScroll('left')}
+              sx={{
+                position: 'absolute',
+                left: -10,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 2,
+                backgroundColor: 'rgba(10, 10, 10, 0.65)',
+                color: '#FFD700',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                '&:hover': {
+                  backgroundColor: 'rgba(10, 10, 10, 0.85)',
+                }
+              }}
+            >
+              <ChevronLeft />
+            </IconButton>
+          )}
         <Box
           ref={isInfiniteScroll ? scrollContainerRef : null}
           onScroll={isInfiniteScroll ? handleInfiniteScroll : undefined}
@@ -582,6 +614,27 @@ const SlotMachine: React.FC = () => {
               </SelectionCard>
             );
           })}
+        </Box>
+          {isInfiniteScroll && (
+            <IconButton
+              onClick={() => handleManualScroll('right')}
+              sx={{
+                position: 'absolute',
+                right: -4,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 2,
+                backgroundColor: 'rgba(10, 10, 10, 0.65)',
+                color: '#FFD700',
+                border: '1px solid rgba(255, 215, 0, 0.3)',
+                '&:hover': {
+                  backgroundColor: 'rgba(10, 10, 10, 0.85)',
+                }
+              }}
+            >
+              <ChevronRight />
+            </IconButton>
+          )}
         </Box>
       </Box>
     </Container>
